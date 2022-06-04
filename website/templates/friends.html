@@ -1,0 +1,45 @@
+{% extends "base.html" %} {% block title%} Friends {% endblock %} 
+
+{% block content %}
+<br />
+<h2 align="center">Friends list</h2>
+<ul class="list-group list-group-flush" id="message">
+    {% for friend in user.friends %}
+
+    <li class="list-group-item list-group-item border">
+        {% if user in friend.friends %} 
+            <div>
+                <span class="pull-left" style="max-width: 80%"> {{ friend.first_name }} </span>
+                <span class="pull-right"> 
+                    <button type="button" class="btn btn-danger" onClick=" deleteFriend( {{ friend.id }} )"> unfriend </button> 
+                </span>
+            </div>
+            
+            <br /> <br />
+            <span> {{ friend.email }} </span>
+
+        {% else %}
+            <div>
+                <span class="pull-left" style="max-width: 80%"> {{ friend.first_name }} </span>
+                <span class="pull-right"><button type="button" class="btn btn-danger"> deny friend request</button> </span>
+                <span class="pull-right"><button type="button" class="btn btn-success mr-1" onClick="acceptFriendRequest( {{ friend.id }} )"> accept friend request </button> </span>
+            </div>
+            <br /> <br />
+            <span> {{ friend.email }} </span>
+    </li>
+
+        {% endif %} 
+    {% endfor %}
+</ul>
+<br />
+
+<form method="POST">
+    <h3 align="center">add Friend</h3>
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter a friend`s email to add a new friend">
+    </div>
+    <button type="submit" class="btn btn-primary">add friend</button>
+
+</form>
+{% endblock %}
