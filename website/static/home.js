@@ -3,6 +3,7 @@
 $(document).ready(function() {
 
     const socket = io.connect('http://127.0.0.1:5000');
+    socket.emit('join')
 
     //sends message when button clicked; emits message content via socket to the server
     $('#send-message').on('click', function() {
@@ -11,6 +12,10 @@ $(document).ready(function() {
             document.getElementById("message-content").value = ""
             socket.emit('send_message', msgContent)
         }
+    })
+
+    $('#close-chatroom').on('click', function() {
+        socket.emit('leave')
     })
 
     //defines how the client reacts to a socket message; displays received message

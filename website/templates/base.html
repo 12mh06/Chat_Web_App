@@ -30,10 +30,19 @@
                 {% if user.is_authenticated %}
                 <a class="nav-itmem nav-link" id="home" href="/"> Home </a>
                 <a class="nav-itmem nav-link" id="logout" href="/logout"> Logout </a>
-                <a class="nav-itmem nav-link" id="friends" href="/friends"> add Friends </a> {% else %}
+                <a class="nav-itmem nav-link" id="friends" href="/friends"> add Friends </a> 
+                {% else %}
                 <a class="nav-itmem nav-link" id="login" href="/login"> Login </a>
-                <a class="nav-itmem nav-link" id="signUp" href="/sign-up"> Sing Up </a> {% endif %}
+                <a class="nav-itmem nav-link" id="signUp" href="/sign-up"> Sing Up </a> 
+                {% endif %}
             </div>
+
+            {% if user.is_authenticated %}
+                <ul class="navbar-nav ml-auto">
+                    <a class="nav-item nav-link active" id="user_email"> {{user.email}} </a>
+                    <a class="nav-item nav-link active" id="user_name"> {{user.first_name}} </a>
+                </ul>
+            {% endif %}             
         </div>
     </nav>
 

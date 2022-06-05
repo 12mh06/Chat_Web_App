@@ -28,7 +28,6 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(100), unique= True, nullable= False)
     first_name = db.Column(db.String(100))
     password = db.Column(db.String(100), nullable= False)
-    active_chatroom_id = db.Column(db.Integer, db.ForeignKey('chatroom.id'), nullable= True)
     chatrooms = db.relationship('Chatroom', secondary= chatroom_user_table, back_populates= 'users')
     messages = db.relationship('Message', backref= 'user')
     friends = db.relationship(
@@ -40,15 +39,15 @@ class Message(db.Model):
     content = db.Column(db.String(300), nullable= True)
     date = db.Column(db.DateTime(timezone=True), default= func.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    chatroom_id = db.Column(db.Integer, db.ForeignKey('chatroom.id'))
+    chatroom_id = db.Column(db.Integer, db.ForeignKey('chatroom.id', ondelete= 'CASCADE'))
 
 # represents a Chatroom in which messages are sent 
 class Chatroom(db.Model):
     id = db.Column(db.Integer, primary_key= True)
     name = db.Column(db.String(50), unique= True)
-    messages = db.relationship('Message', backref= 'chatroom')
+    messages = db.relationship('Message', cascade= 'all,delete',backref= 'chatroom')
     users = db.relationship('User', secondary= chatroom_user_table, back_populates= 'chatrooms')
-    active_users = db.relationship('User', backref= 'active_chatroom')
+    
     
 
 

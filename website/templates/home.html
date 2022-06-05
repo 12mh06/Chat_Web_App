@@ -1,81 +1,86 @@
 {% extends "base.html" %} {% block title %} Home {% endblock %} 
 
 {% block content %} 
-{% if user.active_chatroom %}
-<br />
-<h2 align="center"> {{ user.active_chatroom.name }} </h2>
-<ul class="list-group list-group-flush" id="messages">
 
-    {% for message in user.active_chatroom.messages %}
-    <li class="list-group-item border border-successs">
-        <div>
-            {% if message.user == user %}
-            <span class="pull-left" style="max-width: 80%">{{ message.content }}</span>
-            <span class="pull-right font-weight-bold" style="max-width: 15%"> {{ message.user.first_name }} </span> 
-            {% else %}
-            <span class="pull-left" style="max-width: 80%">{{ message.content }}</span>
-            <span class="pull-right font-weight-bold" style="max-width: 15%"> {{ message.user.first_name }} </span> 
-            {% endif %}
-        </div>
-        <br />
-        <div align="right"> {{ message.date }}</div>
-    </li>
-    {% endfor %}
+{% if chatroom %}
 
-</ul>
-<br />
+    <br />
+    <h2 align="center"> {{ chatroom.name }} </h2>
+    <ul class="list-group list-group-flush" id="messages">
 
-<div class="form-group">
-    <label for="message">new message</label>
-    <input type="message" class="form-control" id="message-content" name="message-content" placeholder="write a new message here!">
-</div>
-
-<button id="send-message" type="submit" class="btn btn-primary" onClick="addMessage(document.getElementById('message-content').value, {{ user.active_chatroom.id }})">send message</button>
-<button type="submit" class="btn btn-danger" onClick="closeChatroom({{ user.active_chatroom.id }})">close Chatroom</button>
-<button type="button" class="btn btn-success" data-toggle="modal" data-target="#Modal"> add friend to chatroom </button>
-
-<!-- Modal -->
-<div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">add Friend to Chatroom</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-        <span aria-hidden="true">&times;</span>
-    </button>
+        {% for message in chatroom.messages %}
+        <li class="list-group-item border border-successs">
+            <div>
+                {% if message.user == user %}
+                    <span class="pull-left" style="max-width: 80%">{{ message.content }}</span>
+                    <span class="pull-right font-weight-bold" style="max-width: 15%"> {{ message.user.first_name }} </span> 
+                    <br />
+                    <div align="right"> {{ message.date }}</div>
+                {% else %}
+                    <span class="pull-right" style="max-width: 80%">{{ message.content }}</span>
+                    <span class="pull-left font-weight-bold" style="max-width: 15%"> {{ message.user.first_name }} </span>
+                    <br />
+                    <div align="left"> {{ message.date }}</div> 
+                {% endif %}
             </div>
-            <div class="modal-body">
-                <input type="message" class="form-control" id="friend-email" name="message-content" placeholder="write your friend's email here!">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onClick="addToChatroom(document.getElementById('friend-email').value, {{ user.active_chatroom.id }} )">submit</button>
+        </li>
+        {% endfor %}
+
+    </ul>
+    <br />
+
+    <div class="form-group">
+        <label for="message">new message</label>
+        <input type="message" class="form-control" id="message-content" name="message-content" placeholder="write a new message here!">
+    </div>
+
+    <button id="send-message" type="submit" class="btn btn-primary" onClick="addMessage(document.getElementById('message-content').value)">send message</button>
+    <button id="close-chatroom" type="submit" class="btn btn-danger" onClick="closeChatroom({{ chatroom.id }})">close Chatroom</button>
+    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#Modal"> add friend to chatroom </button>
+
+    <!-- Modal -->
+    <div class="modal fade" id="Modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">add Friend to Chatroom</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+                </div>
+                <div class="modal-body">
+                    <input type="message" class="form-control" id="friend-email" name="message-content" placeholder="write your friend's email here!">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onClick="addToChatroom(document.getElementById('friend-email').value, {{ chatroom.id }} )">submit</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='home.js') }}"></script>
 
 {% else %}
-<h1 align="center">Chatrooms</h1>
-<ul class="list-group list-group-flush" id="chatrooms">
-    {% for chatroom in user.chatrooms %}
-    <li class="list-group-item"> {{ chatroom.name }}
-        <span class="pull-right"><button type="button" class="btn btn-danger" onClick="leaveChatroom({{ chatroom.id }})"> leave Chatroom</button> </span>
-        <span class="pull-right"><button type="button" class="btn btn-success mr-1" onClick="enterChatroom({{ chatroom.id }})"> enter Chatroom </button> </span>
-    </li>
-    {% endfor %}
-</ul>
-<br />
-<form method="POST">
-    <div class="form-group">
-        <input type="name" class="form-control" , id="chatroom-name" , name="chatroom-name" , placeholder="enter the name of the chatroom">
-    </div>
-    <div align="center">
-        <button type="submit" class="btn btn-primary">join existing or create new Chatroom</button>
-    </div>
-</form>
+    <h1 align="center">Chatrooms</h1>
+    <ul class="list-group list-group-flush" id="chatrooms">
+        {% for chatroom in user.chatrooms %}
+        <li class="list-group-item"> {{ chatroom.name }}
+            <span id="leave-chatroom"class="pull-right"><button type="button" class="btn btn-danger" onClick="leaveChatroom({{ chatroom.id }})"> leave Chatroom</button> </span>
+            <span id="enter-chatroom" class="pull-right"><button type="button" class="btn btn-success mr-1" onClick="enterChatroom({{ chatroom.id }})"> enter Chatroom </button> </span>
+        </li>
+        {% endfor %}
+    </ul>
+    <br />
+    <form method="POST">
+        <div class="form-group">
+            <input type="name" class="form-control" , id="chatroom-name" , name="chatroom-name" , placeholder="enter the name of the chatroom">
+        </div>
+        <div align="center">
+            <button type="submit" class="btn btn-primary">join existing or create new Chatroom</button>
+        </div>
+    </form>
 
 {% endif %}
 
-<script type="text/javascript" src="{{ url_for('static', filename='home.js') }}"></script>
 {% endblock %}

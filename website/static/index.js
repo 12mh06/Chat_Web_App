@@ -1,18 +1,16 @@
 // functions that send needed variables to functions in backend and (if needed) reload or redirect
 
-function deleteMessage(messageId) {
-    fetch('/delete-message', {
+function addMessage(msgContent) {
+    fetch('/add-message', {
         method: 'POST',
-        body: JSON.stringify({ messageId: messageId })
-    }).then((_res) => {
-        window.location.href = '/';
+        body: JSON.stringify({ msgContent: msgContent })
     })
 }
 
-function addMessage(msgContent, chatroomId) {
+function addMessage(msgContent) {
     fetch('/add-message', {
         method: 'POST',
-        body: JSON.stringify({ msgContent: msgContent, chatroomId: chatroomId })
+        body: JSON.stringify({ msgContent: msgContent })
     })
 }
 
@@ -25,10 +23,10 @@ function deleteFriend(friendId) {
     })
 }
 
-function addToChatroom(friendEmail, chatroomId) {
+function addToChatroom(friendEmail) {
     fetch('/add-to-chatroom', {
         method: 'POST',
-        body: JSON.stringify({ friendEmail: friendEmail, chatroomId: chatroomId })
+        body: JSON.stringify({ friendEmail: friendEmail })
     }).then((_res) => {
         window.location.href = '/';
     })

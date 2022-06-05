@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import text
 import sqlalchemy as sql
@@ -33,10 +33,9 @@ def login():
 @auth.route('/logout')
 @login_required
 def logout():
-    chatroom = Chatroom.query.get(current_user.active_chatroom_id)
-    if chatroom:
-        chatroom.active_users.remove(current_user)
-        
+    if session.get('chatroomId'):
+        session.pop('chatroomId', None)
+
     logout_user()
     return redirect(url_for('auth.login'))
 
@@ -54,7 +53,7 @@ def sign_up():
             flash("Email too short", category="error")
         elif email.count('@') != 1:
             flash("Email must contain a '@'", category="error")
-        elif User.query.filter_by(email= email):
+        elif User.query.filter(User.email == email).first():
             flash("Email already has an account", category="error")
         elif len(first_name) < 1:
             flash("First Name too short", category="error")

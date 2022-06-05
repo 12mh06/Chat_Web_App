@@ -1,10 +1,11 @@
-from flask import Blueprint, redirect, render_template, request, flash, jsonify, url_for
+from time import process_time_ns
+from flask import Blueprint, redirect, render_template, request, flash, jsonify, session, url_for
 from flask_login import login_required, current_user
 import json
 from sqlalchemy import insert
 from .models import Message, User, Chatroom
 from . import db
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from . import socket_io
 import datetime
 
@@ -13,27 +14,46 @@ views = Blueprint('views', __name__)
 #called when a message is sent in a chatroom; receives the message content and emits the message to all clients via socket connection
 @socket_io.on('send_message')
 def send_message(msg_content):
-    now = datetime.datetime.now()
-    date = f"{now.year}-{now.month:02d}-{now.day:02d} {now.hour:02d}:{now.minute}:{now.second}"
+    if session.get('chatroomId'):
+        now = datetime.datetime.now()
+        date = f"{now.year}-{now.month:02d}-{now.day:02d} {now.hour:02d}:{now.minute}:{now.second}"
+        chatroomId = session['chatroomId']
+        
+        socket_io.emit('msg_data', {'msg_content' : msg_content, 'msg_date' : date, 'msg_sender' : current_user.first_name}, to= chatroomId)
+
+@socket_io.on('join')
+def on_join():
+    chatroomId = session['chatroomId']
+    join_room(chatroomId)
+
+    emit('conncetion_msg', f"{current_user.first_name} has been connceted to chatroom", to= chatroomId)
     
-    socket_io.emit('msg_data', {'msg_content' : msg_content, 'msg_date' : date, 'msg_sender' : current_user.first_name})
+
+@socket_io.on('leave')
+def on_leave():
+    if session.get('chatroomId'):
+        chatroomId = session['chatroomId']
+        leave_room(chatroomId)
+        emit('conncetcion_msg', f"{current_user.first_name} has been disconnected from chatroom", to= chatroomId)
 
 #stores a new message in the database when a message is sent
-@views.route('/add-message', methods= ['GET', 'POST'])
+@views.route('/add-message', methods= ['POST'])
 @login_required
 def add_message():
-    data = json.loads(request.data)
-    chatroomId = data['chatroomId']
-    chatroom = Chatroom.query.get(chatroomId)
-    msg_content = data['msgContent']
-    if not msg_content:
-        flash('message has to contain text', category= 'error')
-    else:
-        message = Message(content= msg_content)
-        db.session.add(message)
-        chatroom.messages.append(message)
-        current_user.messages.append(message)
-        db.session.commit()
+    if session.get('chatroomId'):
+        print('YES')
+        chatroomId = session["chatroomId"]
+        data = json.loads(request.data)
+        chatroom = Chatroom.query.get(chatroomId)
+        msg_content = data['msgContent']
+        if not msg_content:
+            flash('message has to contain text', category= 'error')
+        else:
+            message = Message(content= msg_content)
+            db.session.add(message)
+            chatroom.messages.append(message)
+            current_user.messages.append(message)
+            db.session.commit()
 
     return jsonify({})
 
@@ -41,21 +61,22 @@ def add_message():
 @views.route('/add-to-chatroom', methods=['POST'])
 @login_required
 def add_to_chatroom():
-    data = json.loads(request.data)
-    friend_email = data['friendEmail']
-    chatroomId = data['chatroomId']
-    
-    chatroom = Chatroom.query.get(chatroomId)
-    friend = User.query.filter_by(email= friend_email).first()
-    if not friend:
-        flash('user does not exist', category='error')
-    elif friend not in current_user.friends:
-        flash('user is not your friend', category='error')
-    else:
-        friend.chatrooms.append(chatroom)
-        chatroom.users.append(friend)
-        db.session.commit()
-        flash('friend has been added to chatroom', category= 'success')
+    if session.get('chatroomId'):
+        data = json.loads(request.data)
+        friend_email = data['friendEmail']
+        chatroomId = session["chatroomId"]
+        
+        chatroom = Chatroom.query.get(chatroomId)
+        friend = User.query.filter_by(email= friend_email).first()
+        if not friend:
+            flash('user does not exist', category='error')
+        elif friend not in current_user.friends:
+            flash('user is not your friend', category='error')
+        else:
+            friend.chatrooms.append(chatroom)
+            chatroom.users.append(friend)
+            db.session.commit()
+            flash('friend has been added to chatroom', category= 'success')
 
     return jsonify({})
 
@@ -64,6 +85,12 @@ def add_to_chatroom():
 @views.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
+    if session.get('chatroomId'):
+        chatroomId = session['chatroomId']
+        chatroom = Chatroom.query.get(chatroomId)
+
+        return render_template('home.html', user= current_user, chatroom= chatroom)  
+
     if request.method == 'POST':
         chatroom_name = request.form.get('chatroom-name')
         chatroom = Chatroom.query.filter_by(name= chatroom_name).first()
@@ -79,22 +106,20 @@ def home():
 
             chatroom.users.append(current_user)
             current_user.chatrooms.append(chatroom)
-            chatroom.active_users.append(current_user)
             db.session.commit()
+            session['chatroomId'] = chatroom.id
             flash('joined chatroom', category= 'success')
-
-    return render_template('home.html', user= current_user)    
+    
+    return render_template('home.html', user= current_user)  
 
 #enters the user into the chosen chatroom. The user becomes an active user 
-@views.route('/enter-chatroom', methods= ['GET', 'POST'])
+@views.route('/enter-chatroom', methods= ['POST'])
 @login_required
 def enter_chatroom():
     chatroom = json.loads(request.data)
     chatroomId = chatroom['chatroomId']
     chatroom = Chatroom.query.get(chatroomId)
-
-    chatroom.active_users.append(current_user)
-    db.session.commit()
+    session["chatroomId"] = chatroomId
 
     return jsonify({})
 
@@ -102,13 +127,13 @@ def enter_chatroom():
 @views.route('/close-chatroom', methods= ['GET', 'POST'])
 @login_required
 def close_chatroom():
-    chatroom = json.loads(request.data)
-    chatroomId = chatroom['chatroomId']
-    chatroom = Chatroom.query.get(chatroomId)
-    if chatroom:
-        chatroom.active_users.remove(current_user)
-        db.session.commit()
-        flash('closed chatroom', category= 'success')
+    if session.get('chatroomId'):
+        chatroomId = session['chatroomId']
+        chatroom = Chatroom.query.get(chatroomId)
+
+        if chatroom:
+            session.pop('chatroomId', None)
+            flash('closed chatroom', category= 'success')
     
     return jsonify({})
 
