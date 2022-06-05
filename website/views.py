@@ -11,7 +11,7 @@ import datetime
 
 views = Blueprint('views', __name__)
 
-#called when a message is sent in a chatroom; receives the message content and emits the message to all clients via socket connection
+# called when a message is sent in a chatroom; receives the message content and emits the message to all clients in the corresponsive room
 @socket_io.on('send_message')
 def send_message(msg_content):
     if session.get('chatroomId'):
@@ -21,6 +21,7 @@ def send_message(msg_content):
         
         socket_io.emit('msg_data', {'msg_content' : msg_content, 'msg_date' : date, 'msg_sender' : current_user.first_name}, to= chatroomId)
 
+# conncets users to the socket room when entering a chatroom
 @socket_io.on('join')
 def on_join():
     chatroomId = session['chatroomId']
@@ -28,7 +29,7 @@ def on_join():
 
     emit('conncetion_msg', f"{current_user.first_name} has been connceted to chatroom", to= chatroomId)
     
-
+# disconnects user after closing a chatroom (the chatroom stays in user.chatrooms)
 @socket_io.on('leave')
 def on_leave():
     if session.get('chatroomId'):
@@ -36,7 +37,7 @@ def on_leave():
         leave_room(chatroomId)
         emit('conncetcion_msg', f"{current_user.first_name} has been disconnected from chatroom", to= chatroomId)
 
-#stores a new message in the database when a message is sent
+# stores a new message in the database when a message is sent
 @views.route('/add-message', methods= ['POST'])
 @login_required
 def add_message():
@@ -57,7 +58,7 @@ def add_message():
 
     return jsonify({})
 
-#adds user to a chatroom; the added user is not an active user (inside the chatroom in the moment), but can enter the chatroom 
+# adds user to a chatroom; the added user is not an active user (inside the chatroom in the moment), but can enter the chatroom 
 @views.route('/add-to-chatroom', methods=['POST'])
 @login_required
 def add_to_chatroom():
@@ -80,7 +81,7 @@ def add_to_chatroom():
 
     return jsonify({})
 
-#'POST' method called when a chatroom name is typed and submitted. if the chatroom already exists the user is added to the chatroom
+# 'POST' method called when a chatroom name is typed and submitted. if the chatroom already exists the user is added to the chatroom
 # otherwise the chatroom gets created and the user gets added simultaneously
 @views.route('/', methods=['GET', 'POST'])
 @login_required
@@ -112,7 +113,7 @@ def home():
     
     return render_template('home.html', user= current_user)  
 
-#enters the user into the chosen chatroom. The user becomes an active user 
+# enters the user into the chosen chatroom. The user becomes an active user, a session with the chosen chatroom is created
 @views.route('/enter-chatroom', methods= ['POST'])
 @login_required
 def enter_chatroom():
@@ -123,7 +124,7 @@ def enter_chatroom():
 
     return jsonify({})
 
-# user is deleted from chatroom.active_users but stays in the general chatroom.users list
+# deletes the session withe the chatroom Id, closing the chatroom for the user (user returns to list of chatrooms)
 @views.route('/close-chatroom', methods= ['GET', 'POST'])
 @login_required
 def close_chatroom():
@@ -156,7 +157,7 @@ def leave_chatroom():
 
     return jsonify({})
 
-#'POST' method adds the current user to the chosen user's friendslist if the friend exists
+# 'POST' method adds the current user to the chosen user's friendslist if the friend exists
 # friend request from X to Y: => X in Y.friends; Y NOT in X.friends
 @views.route('/friends', methods=['GET', 'POST'])
 @login_required

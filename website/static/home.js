@@ -2,10 +2,12 @@
 
 $(document).ready(function() {
 
+    // creates a socket connection 
     const socket = io.connect('http://127.0.0.1:5000');
+    // sends the join command to the server -> user gets connected to the socket 'room' 
     socket.emit('join')
 
-    //sends message when button clicked; emits message content via socket to the server
+    // sends message when button clicked; emits message content via socket to the server
     $('#send-message').on('click', function() {
         if (document.getElementById("message-content") != null) {
             const msgContent = document.getElementById("message-content").value
@@ -14,7 +16,8 @@ $(document).ready(function() {
         }
     })
 
-    $('#close-chatroom').on('click', function() {
+    // sends event to server -> disconncets user from socket room 
+    $('#close-chatroom,#logout,#friends').on('click', function() {
         socket.emit('leave')
     })
 

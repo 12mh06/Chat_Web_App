@@ -8,7 +8,7 @@ from . import db
 
 auth = Blueprint('auth', __name__)
 
-#logs user in with email and password
+# logs user in with email and password
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -29,7 +29,7 @@ def login():
 
     return render_template("login.html", user= current_user)
 
-#logs user out
+# logs user out
 @auth.route('/logout')
 @login_required
 def logout():
